@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>BTC 대시보드</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 30px;
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            margin-bottom: 20px;
+        }
+
+        table th,
+        table td {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1 class="mb-4">💰 BTC 수령 대시보드</h1>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">총 원금 </h5>
+                        <p class="card-text fw-bold">
+                            {{ "{:,.2f}".format(summary.total_amount) }} USD</br>
+                            {{ "{:,.2f}".format(summary.k_total_amount) }} KRW
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">총 BTC 수령량</h5>
+                        <p class="card-text fw-bold">{{ "{:,.8f}".format(summary.total_btc) }} BTC</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">현재 BTC 시세</h5>
+                        <p class="card-text fw-bold">
+                            {{ "{:,}".format(summary.price) }} USD<br>
+                            {{ "{:,}".format(summary.k_price) }} KRW
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 평가액 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card text-bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">총 평가액 (USD)</h5>
+                        <p class="card-text fw-bold">{{ "{:,.2f}".format(summary.valuation) }} USD ({{
+                            "%.2f"|format(summary.rate) }}%)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card text-bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">총 평가액 (KRW)</h5>
+                        <p class="card-text fw-bold">{{ "{:,.2f}".format(summary.k_valuation) }} KRW (원금대비 {{"{:,.2f}".format(summary.k_gap)}} KRW 상승)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="mb-4">💰 BTC 수령 기록</h1>
+
+        <form action="/add" method="POST" class="row g-3 mb-4">
+            <div class="col-md-5">
+                <input type="number" step="0.01" id="amount" name="amount" class="form-control" placeholder="금액 (USD)"
+                    required>
+            </div>
+            <div class="col-md-5">
+                <input type="number" step="0.00000001" id="btc" name="btc" class="form-control" placeholder="BTC 수량"
+                    required>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100">저장</button>
+            </div>
+        </form>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>금액 (USD)</th>
+                    <th>BTC 수량</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>{{ entry[0] }}</td> <!-- date -->
+                    <td>{{ "{:,.2f}".format(entry[1]) }}</td> <!-- amount -->
+                    <td>{{ "%.8f"|format(entry[2]) }}</td> <!-- btc -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+
+</html>

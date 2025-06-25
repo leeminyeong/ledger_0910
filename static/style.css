@@ -1,0 +1,48 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #111;
+  color: #fff;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 3fr 5fr 1fr;
+  grid-template-rows: auto auto auto 1fr auto auto;
+  gap: 10px;
+  padding: 20px;
+}
+
+.box {
+  background-color: #3366cc;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.col-span-2 {
+  grid-column: span 2;
+}
+
+.full-span {
+  grid-column: span 3;
+}
+
+/* 버튼 박스 고정 제거하고 스타일만 유지 */
+.exchange-box {
+  text-align: center;
+  font-weight: bold;
+  background-color: #2255aa;
+}
+
+/* 반응형 처리: 화면이 좁아지면 한 줄로 쭉 떨어지게 */
+@media screen and (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .col-span-2,
+  .full-span {
+    grid-column: span 1;
+  }
+}
