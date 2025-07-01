@@ -3,7 +3,8 @@
 # venv\Scripts\Activate
 # Set-ExecutionPolicy Restricted
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, session, render_template, request, redirect, url_for
+from dotenv import load_dotenv
 import json
 import os
 import sqlite3
@@ -13,8 +14,12 @@ import time
 from bs4 import BeautifulSoup
 
 
+
 # Flask 앱 생성
 app = Flask(__name__, template_folder='templates')
+
+load_dotenv()
+app.secret_key = os.getenv("SECRET_KEY")
 
 # SQLite 데이터베이스 파일 경로
 #DB_PATH = "database.db"
@@ -43,7 +48,7 @@ def insert_entry(amount, btc):
 def receive():
     if request.method == "POST":
         password = request.form.get("password")
-        if password != "970910":
+        if password != os.getenv("LOGIN_PASSWORD"):
             # 비밀번호 틀리면 URL 파라미터로 전달
             return redirect(url_for("index", error="wrong_password"))
     amount = request.form["amount"]
@@ -98,9 +103,6 @@ def get_summary():
     row = c.fetchone()
     conn.close()
 
-    # 환율 정보 가져오기 (USD → KRW)
-    c_rate = get_naver_usd_krw()
-
     # 기본 값 설정
     total_amount = row[0] or 0
     total_btc = row[1] or 0
@@ -112,6 +114,9 @@ def get_summary():
     # 현재 자산 평가
     valuation = total_btc * price  # USD 기준 평가액
     rate = ((valuation - total_amount) / total_amount * 100) if total_amount else 0  # 수익률
+
+    # 환율
+    c_rate = get_naver_usd_krw()
 
     # 한화 기준 평가
     k_valuation = valuation * c_rate
@@ -135,7 +140,7 @@ def get_summary():
 def fetch_entries():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT date, amount, btc FROM entries ORDER BY id DESC")
+    c.execute("SELECT date, amount, btc, id FROM entries ORDER BY id DESC")
     entries = c.fetchall()
     conn.close()
     return entries
@@ -143,6 +148,10 @@ def fetch_entries():
 # 메인 페이지: 수령 내역 + 요약 정보 표시
 @app.route("/")
 def index():
+
+    if not session.get("logged_in"):
+        return redirect("/login")
+
     entries = fetch_entries()
     summary = get_summary()
     return render_template("index.html", entries=entries, summary=summary)
@@ -155,6 +164,45 @@ def add():
     if amount and btc:
         insert_entry(float(amount), float(btc))
     return redirect("/")
+
+@app.route("/edit/<int:id>", methods=["POST"])
+def edit_entry(id):
+    amount = float(request.form["amount"])
+    btc = float(request.form["btc"])
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE entries SET amount = ?, btc = ? WHERE id = ?", (amount, btc, id))
+    conn.commit()
+    conn.close()
+
+    return redirect("/")
+
+@app.route("/delete/<int:id>", methods=["POST"])
+def delete_entry(id):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM entries WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+
+    return redirect("/")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password == os.getenv("LOGIN_PASSWORD"):
+            session["logged_in"] = True
+            return redirect("/")
+        else:
+            return render_template("login.html", error=True)
+    return render_template("login.html")
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.pop("token", None)  # 토큰 제거
+    return redirect("/login")
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -21,15 +21,20 @@
         }
     </style>
     {% if request.args.get('error') == 'wrong_password' %}
-<script>
-    alert("비밀번호가 틀렸습니다.");
-</script>
-{% endif %}
+    <script>
+        alert("비밀번호가 틀렸습니다.");
+    </script>
+    {% endif %}
 </head>
 
 <body>
 
     <div class="container">
+        <div class="d-flex justify-content-end mb-3">
+            <form action="/logout" method="POST">
+                <button type="submit" class="btn btn-outline-danger">로그아웃</button>
+            </form>
+        </div>
         <h1 class="mb-4">💰 BTC 수령 대시보드</h1>
 
         <!-- Summary Cards -->
@@ -82,7 +87,8 @@
                 <div class="card text-bg-primary">
                     <div class="card-body">
                         <h5 class="card-title">총 평가액 (KRW)</h5>
-                        <p class="card-text fw-bold">{{ "{:,.2f}".format(summary.k_valuation) }} KRW (원금대비 {{"{:,.2f}".format(summary.k_gap)}} KRW 상승)</p>
+                        <p class="card-text fw-bold">{{ "{:,.2f}".format(summary.k_valuation) }} KRW (원금대비
+                            {{"{:,.2f}".format(summary.k_gap)}} KRW 상승)</p>
                     </div>
                 </div>
             </div>
@@ -99,9 +105,8 @@
                 <input type="number" step="0.00000001" id="btc" name="btc" class="form-control" placeholder="BTC 수량"
                     required>
             </div>
-                        <div class="col-md-4">
-                <input type="password" name="password" class="form-control" placeholder="비밀번호"
-                    required>
+            <div class="col-md-4">
+                <input type="password" name="password" class="form-control" placeholder="비밀번호" required>
             </div>
             <div class="col-md-2">
                 <button class="btn btn-primary w-100">저장</button>
@@ -114,14 +119,22 @@
                     <th>날짜</th>
                     <th>금액 (USD)</th>
                     <th>BTC 수량</th>
+                    <th>작업</th> <!-- 추가 -->
                 </tr>
             </thead>
             <tbody>
                 {% for entry in entries %}
-                <tr>
-                    <td>{{ entry[0] }}</td> <!-- date -->
-                    <td>{{ "{:,.2f}".format(entry[1]) }}</td> <!-- amount -->
-                    <td>{{ "%.8f"|format(entry[2]) }}</td> <!-- btc -->
+                <tr data-id="{{ entry[3] }}"> <!-- id 필요 -->
+                    <td class="date">{{ entry[0] }}</td>
+                    <td class="amount">{{ "{:,.2f}".format(entry[1]) }}</td>
+                    <td class="btc">{{ "%.8f"|format(entry[2]) }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-btn">수정</button>
+                        <form method="POST" action="/delete/{{ entry[3] }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('삭제하시겠습니까?');">삭제</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -129,5 +142,30 @@
     </div>
 
 </body>
+<script>
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const row = this.closest('tr');
+            const id = row.dataset.id;
+            const date = row.querySelector('.date').innerText;
+            const amount = row.querySelector('.amount').innerText.replace(/,/g, '');
+            const btc = row.querySelector('.btc').innerText;
+
+            row.innerHTML = `
+            <td>${date}</td>
+            <td>${amount}</td>
+            <td>${btc}</td>
+            <td>
+                <form method="POST" action="/edit/${id}">
+                    <input type="hidden" name="date" value="${date}">
+                    <input type="number" step="0.01" name="amount" value="${amount}" class="form-control mb-1" required>
+                    <input type="number" step="0.00000001" name="btc" value="${btc}" class="form-control mb-1" required>
+                    <button type="submit" class="btn btn-success btn-sm">저장</button>
+                </form>
+            </td>
+        `;
+        });
+    });
+</script>
 
 </html>

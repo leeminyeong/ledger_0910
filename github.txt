@@ -1,0 +1,8 @@
+# 1. 작업 저장
+git add .
+
+# 2. 커밋 메시지 작성
+git commit -m "커밋 내용 요약"
+
+# 3. GitHub에 업로드
+git push origin main
