@@ -12,14 +12,17 @@ from datetime import datetime
 import requests
 import time
 from bs4 import BeautifulSoup
+import sys
+
 
 
 
 # Flask 앱 생성
 app = Flask(__name__, template_folder='templates')
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 app.secret_key = os.getenv("SECRET_KEY")
+
 
 # SQLite 데이터베이스 파일 경로
 #DB_PATH = "database.db"
@@ -39,7 +42,7 @@ def insert_entry(amount, btc):
     c = conn.cursor()
     c.execute(
         "INSERT INTO entries (date, amount, btc) VALUES (?, ?, ?)",
-        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), amount, btc)
+        (datetime.now().strftime("%Y-%m-%d"), amount, btc)
     )
     conn.commit()
     conn.close()
@@ -55,7 +58,7 @@ def receive():
     btc = request.form["btc"]
     # 여기서 DB에 저장하는 로직 실행
     insert_entry(amount, btc)
-    
+
     return redirect("/")
 
 # BTC 시세 가져오기
@@ -103,9 +106,17 @@ def get_summary():
     row = c.fetchone()
     conn.close()
 
+    # 환율
+    c_rate = get_naver_usd_krw()
+
     # 기본 값 설정
     total_amount = row[0] or 0
     total_btc = row[1] or 0
+
+    # 평균 단가 (USD 기준)
+    average_price = (total_amount / total_btc) if total_btc else 0
+    k_average_price = average_price * c_rate
+
 
     # 시세 조회 (USD, KRW) -- 수정수정했수정
     price = get_upbit_btc_price("USDT")
@@ -115,13 +126,13 @@ def get_summary():
     valuation = total_btc * price  # USD 기준 평가액
     rate = ((valuation - total_amount) / total_amount * 100) if total_amount else 0  # 수익률
 
-    # 환율
-    c_rate = get_naver_usd_krw()
 
     # 한화 기준 평가
     k_valuation = valuation * c_rate
     k_total_amount = total_amount * c_rate
     k_gap =  k_valuation -  k_total_amount
+
+
 
     return {
         "total_amount": total_amount,
@@ -132,7 +143,9 @@ def get_summary():
         "k_valuation": k_valuation,
         "k_total_amount": k_total_amount,
         "k_gap": k_gap,
-        "k_price": k_price
+        "k_price": k_price,
+        "average_price" : average_price,
+        "k_average_price" : k_average_price
     }
 
 

@@ -55,7 +55,10 @@
                 <div class="card text-bg-light">
                     <div class="card-body">
                         <h5 class="card-title">총 BTC 수령량</h5>
-                        <p class="card-text fw-bold">{{ "{:,.8f}".format(summary.total_btc) }} BTC</p>
+                        <p class="card-text fw-bold">{{ "{:,.8f}".format(summary.total_btc) }} BTC</br>
+                           {{ "{:,.2f}".format(summary.average_price) }} USD / BTC ({{"{:,.2f}".format(summary.k_average_price)}} KRW)
+
+                        </p>
                     </div>
                 </div>
             </div>
